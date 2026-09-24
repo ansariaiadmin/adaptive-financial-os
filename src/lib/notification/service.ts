@@ -1,6 +1,39 @@
 import type { NotificationPayload, NotificationResult, NotificationConfig } from './types';
 import { getNotificationConfig } from './types';
-const inbox = new Map<string, NotificationPayload[]>();
+import * as fs from 'fs';
+import * as path from 'path';
+
+// PERSISTENT INBOX — v3.2.1 — تاریکی روشن شد — قبلا Map تو RAM بود — ریست می‌شد همه نوتیف‌ها می‌پرید — فاجعه — حالا فایل JSON — runtime/notifications/inbox.json — persist
+const INBOX_FILE = process.env.NOTIF_INBOX_FILE || path.join(process.cwd(), 'runtime', 'notifications', 'inbox.json');
+
+function ensureDir() {
+  try { fs.mkdirSync(path.dirname(INBOX_FILE), { recursive: true }); } catch {}
+}
+
+function loadInbox(): Map<string, NotificationPayload[]> {
+  try {
+    ensureDir();
+    if (fs.existsSync(INBOX_FILE)) {
+      const raw = fs.readFileSync(INBOX_FILE, 'utf8');
+      const parsed = JSON.parse(raw) as Record<string, NotificationPayload[]>;
+      return new Map(Object.entries(parsed));
+    }
+  } catch {}
+  return new Map();
+}
+
+function saveInbox(inbox: Map<string, NotificationPayload[]>) {
+  try {
+    ensureDir();
+    const obj = Object.fromEntries(inbox.entries());
+    fs.writeFileSync(INBOX_FILE, JSON.stringify(obj, null, 2), 'utf8');
+  } catch (e) {
+    console.error('Failed to persist inbox', e);
+  }
+}
+
+const inbox = loadInbox();
+
 export class NotificationService {
   private config: NotificationConfig;
   constructor() { this.config = getNotificationConfig(); }
@@ -24,7 +57,7 @@ export class NotificationService {
   private async sendInApp(payload: NotificationPayload, at: string): Promise<NotificationResult> {
     if (!this.config.inApp.enabled) return { channel: 'in_app', success: false, error: 'Disabled', at };
     const userId = payload.userId || 'system'; const list = inbox.get(userId) || []; list.push(payload);
-    if (list.length > 50) list.shift(); inbox.set(userId, list);
+    if (list.length > 50) list.shift(); inbox.set(userId, list); saveInbox(inbox);
     return { channel: 'in_app', success: true, messageId: `inapp-${Date.now()}`, at };
   }
   private async sendEmail(payload: NotificationPayload, at: string): Promise<NotificationResult> {
@@ -50,5 +83,9 @@ export class NotificationService {
       return { channel: 'telegram', success: true, messageId: String(data.result?.message_id || Date.now()), at };
     } catch(e) { return { channel: 'telegram', success: false, error: String(e), at }; }
   }
+  listInApp(userId: string): NotificationPayload[] {
+    return inbox.get(userId) || [];
+  }
+  getConfig(): NotificationConfig { return this.config; }
 }
 export const notificationService = new NotificationService();
