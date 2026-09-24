@@ -3,7 +3,6 @@ import { money } from "../src/money.js";
 import { balancePerAccount, getAccountBalance, trialBalanceFromLines, trialBalanceFromMap, projectionDeltas } from "../src/balance.js";
 import type { JournalLineInput } from "../src/types.js";
 
-const T = "00000000-0000-4000-8000-000000000001";
 const CASH = "00000000-0000-4000-8000-00000000000a";
 const REV = "00000000-0000-4000-8000-00000000000b";
 const EXP = "00000000-0000-4000-8000-00000000000c";
