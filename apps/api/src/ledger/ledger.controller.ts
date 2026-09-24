@@ -1,10 +1,14 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { LedgerService } from './ledger.service';
+import { ReportsService } from './reports.service';
 import { PostEntryDto } from './dto/post-entry.dto';
 
 @Controller('ledger')
 export class LedgerController {
-  constructor(private readonly ledger: LedgerService) {}
+  constructor(
+    private readonly ledger: LedgerService,
+    private readonly reports: ReportsService,
+  ) {}
 
   @Post('entries')
   post(@Body() dto: PostEntryDto) {
@@ -34,5 +38,40 @@ export class LedgerController {
   @Get('balances')
   listBalances(@Query('tenantId') tenantId: string) {
     return this.ledger.listBalances(tenantId);
+  }
+
+  // Reports — v3.2.2 — تاریکی روشن شد — همینا رو برو — حسابدار واقعی نیاز داره
+  @Get('reports/trial-balance')
+  trialBalance(@Query('tenantId') tenantId: string) {
+    return this.reports.trialBalance(tenantId);
+  }
+
+  @Get('reports/balance-sheet')
+  balanceSheet(@Query('tenantId') tenantId: string) {
+    return this.reports.balanceSheet(tenantId);
+  }
+
+  @Get('reports/income-statement')
+  incomeStatement(
+    @Query('tenantId') tenantId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.reports.incomeStatement(tenantId, from, to);
+  }
+
+  @Get('reports/ledger-export')
+  ledgerExport(
+    @Query('tenantId') tenantId: string,
+    @Query('accountCode') accountCode?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.reports.ledgerExport(tenantId, accountCode, from, to);
+  }
+
+  @Get('reports/hierarchy')
+  hierarchy(@Query('tenantId') tenantId: string) {
+    return this.reports.accountHierarchy(tenantId);
   }
 }
