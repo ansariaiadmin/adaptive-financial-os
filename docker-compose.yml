@@ -1,4 +1,7 @@
+# تاریکی روشن شد — v3.1.0 — NOTIF + SMS + TELEGRAM + fallback + throttling — .env شامل همه — docker-compose env_file .env را می‌خواند — امن
 services:
+  # تاریکی روشن شد — .env با NOTIF + SMS + TELEGRAM + fallback + throttling — v3.1.0
+
   db:
     image: postgres:16-alpine
     container_name: afos-postgres
