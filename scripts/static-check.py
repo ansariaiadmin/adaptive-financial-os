@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Static checks for the adaptive-financial-os monorepo."""
-import json, os, re, sys, glob
+import glob
+import json
+import os
+import re
+import sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 ROOT = os.path.abspath(ROOT)
@@ -25,7 +28,7 @@ try:
     check("YAML valid: pnpm-workspace.yaml", True)
 except ImportError:
     txt = open(ws, encoding='utf-8').read()
-    check("YAML valid: pnpm-workspace.yaml (fallback regex)", bool(re.search(r'^packages\s*:', txt, re.M)))
+    check("YAML valid: pnpm-workspace.yaml (fallback regex)", bool(re.search(r'^packages\s*:', txt, re.MULTILINE)))
 except Exception as e:
     check("YAML valid: pnpm-workspace.yaml", False, str(e))
 
@@ -65,7 +68,7 @@ pat = {
     'BEGIN': re.search(r"query\(\s*'BEGIN'\s*\)", src),
     'COMMIT': re.search(r"query\(\s*'COMMIT'\s*\)", src),
     'ROLLBACK': re.search(r"query\(\s*'ROLLBACK'\s*\)", src),
-    'outbox': bool(re.search(r'\boutbox\b', src, re.I)),
+    'outbox': bool(re.search(r'\boutbox\b', src, re.IGNORECASE)),
 }
 check("Atomic transaction pattern in ledger.service.ts (BEGIN/COMMIT/ROLLBACK/outbox)",
       all(pat.values()), str({k: bool(v) for k, v in pat.items()}))

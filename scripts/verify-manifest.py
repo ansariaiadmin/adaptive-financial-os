@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Verify every repository file against manifest.sha256 (exits non-zero on failure)."""
-import hashlib, sys
+import hashlib
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
