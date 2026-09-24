@@ -13,7 +13,7 @@ describe("Projection idempotency guard (regression)", () => {
 
     const mockPool = {
       connect: async () => ({
-        query: async (sql: string, _params?: any[]) => {
+        query: async (sql: string, _params?: unknown[]) => {
           const lower = sql.toLowerCase();
           if (lower.includes("select") && lower.includes("from ledger_projection") && lower.includes("where entry_id")) {
             // Simulate already projected
@@ -38,7 +38,7 @@ describe("Projection idempotency guard (regression)", () => {
 
     const mockDb = {
       getPool: () => mockPool,
-      query: async (sql: string, _params?: any[]) => {
+      query: async (sql: string, _params?: unknown[]) => {
         // For entry + lines fetch outside transaction
         if (sql.includes("FROM journal_entries")) {
           return { rows: [{ id: "entry-1", tenant_id: "t1", description: "test", occurred_at: new Date().toISOString(), created_at: new Date().toISOString() }] };
@@ -72,7 +72,7 @@ describe("Projection idempotency guard (regression)", () => {
 
     const mockPool = {
       connect: async () => ({
-        query: async (sql: string, _params?: any[]) => {
+        query: async (sql: string, _params?: unknown[]) => {
           const lower = sql.toLowerCase();
           if (lower.includes("select") && lower.includes("from ledger_projection") && lower.includes("where entry_id")) {
             // First call: not exists, second call: exists (simulate race)

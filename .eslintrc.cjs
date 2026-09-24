@@ -7,8 +7,8 @@ module.exports = {
   env: { node: true, es2022: true },
   rules: {
     "@typescript-eslint/no-explicit-any": "off",
-    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
     "no-empty": "off"
   },
-  ignorePatterns: ["dist", "node_modules", "*.cjs"]
+  ignorePatterns: ["dist", "node_modules", "*.cjs", ".next", "coverage"]
 };

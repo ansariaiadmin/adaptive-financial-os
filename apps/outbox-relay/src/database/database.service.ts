@@ -33,7 +33,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     return this.pool;
   }
 
-  query<T extends QueryResultRow = QueryResultRow>(text: string, params: any[] = []): Promise<{ rows: T[] }> {
+  query<T extends QueryResultRow = QueryResultRow>(text: string, params: unknown[] = []): Promise<{ rows: T[] }> {
     return this.pool.query<T>(text, params);
   }
 }

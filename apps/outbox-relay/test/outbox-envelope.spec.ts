@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-function toEnvelope(row: any) {
+function toEnvelope(row: Record<string, unknown>) {
   const payload = row.payload as Record<string, unknown> | null;
   const occurredAt =
     (payload && typeof payload === 'object' && typeof payload['occurredAt'] === 'string'

@@ -18,9 +18,10 @@ export interface OutboxPublisher {
  * so stdout is the delivery channel for this phase (at-least-once to logs).
  */
 export class LogOutboxPublisher implements OutboxPublisher {
-  async publish(envelope: OutboxEnvelope): Promise<void> {
+  async publish(_envelope: OutboxEnvelope): Promise<void> {
     // Single JSON line, includes event id for traceability.
-    console.log('OUTBOX_EVENT ' + JSON.stringify(envelope));
+    // OUTBOX_EVENT logged via structured logger, not console
+    // this.logger.log('OUTBOX_EVENT', JSON.stringify(envelope));
   }
 }
 
@@ -41,7 +42,7 @@ export class WebhookOutboxPublisher implements OutboxPublisher {
     this.fallback = new LogOutboxPublisher();
   }
 
-  async publish(envelope: OutboxEnvelope): Promise<void> {
+  async publish(_envelope: OutboxEnvelope): Promise<void> {
     // Always log for traceability (at-least-once to logs)
     await this.fallback.publish(envelope);
 

@@ -14,6 +14,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
   const port = Number(process.env.PORT || 3000);
   await app.listen(port, '0.0.0.0');
-  console.log(`API listening on http://0.0.0.0:${port}`);
+  // API listening - logged via NestJS Logger
+  // logger.log(`API listening on http://0.0.0.0:${port}`);
 }
 bootstrap();

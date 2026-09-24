@@ -85,7 +85,7 @@ export class LedgerService {
 
       await client.query('COMMIT');
       return { id: entryId, status: 'posted' };
-    } catch (err: any) {
+    } catch (err: unknown) {
       try {
         await client.query('ROLLBACK');
       } catch {}
@@ -149,7 +149,7 @@ export class LedgerService {
           [tenantId, Math.min(limit, 100)],
         );
         return res.rows;
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (err.code === '42P01') {
           // Table does not exist yet — return empty
           return [];
@@ -175,7 +175,7 @@ export class LedgerService {
           [tenantId],
         );
         return res.rows;
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (err.code === '42P01') {
           return [];
         }
@@ -199,7 +199,7 @@ export class LedgerService {
           throw new NotFoundException(`Projection for entry ${entryId} not found`);
         }
         return res.rows[0];
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (err.code === '42P01') {
           throw new NotFoundException(`Projection table not yet created`);
         }
