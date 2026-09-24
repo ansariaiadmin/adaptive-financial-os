@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: afos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
+      POSTGRES_DB: ${PG_DATABASE:-adaptive_os}
+    ports:
+      - "127.0.0.1:${PG_PORT:-35432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres} -d ${PG_DATABASE:-adaptive_os}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: afos-api
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: ${PG_USER:-postgres}
+      PGPASSWORD: ${PG_PASSWORD:-postgres}
+      PGDATABASE: ${PG_DATABASE:-adaptive_os}
+    ports:
+      - "127.0.0.1:${PORT:-38080}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  outbox-relay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: afos-outbox-relay
+    restart: unless-stopped
+    working_dir: /app/apps/outbox-relay
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: ${PG_USER:-postgres}
+      PGPASSWORD: ${PG_PASSWORD:-postgres}
+      PGDATABASE: ${PG_DATABASE:-adaptive_os}
+    command: ["node", "dist/main.js"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
