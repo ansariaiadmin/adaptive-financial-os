@@ -9,7 +9,7 @@ NC='\033[0m'
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  Adaptive Financial OS — Double-Entry Ledger${NC}"
-echo -e "${BLUE}  نصب خودکار - Auto Installer v1.0.1${NC}"
+echo -e "${BLUE}  نصب خودکار - Auto Installer v0.9.3${NC}"
 echo -e "${BLUE}  سیستم مالی دفترداری دوبل${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""

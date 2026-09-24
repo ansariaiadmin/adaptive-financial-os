@@ -4,16 +4,16 @@ services:
     container_name: afos-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${PG_USER:-postgres}
-      POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
-      POSTGRES_DB: ${PG_DATABASE:-adaptive_os}
+      POSTGRES_USER: ${PGUSER:-postgres}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-postgres}
+      POSTGRES_DB: ${PGDATABASE:-adaptive_os}
     ports:
       - "127.0.0.1:${PG_PORT:-35432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/migrations:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres} -d ${PG_DATABASE:-adaptive_os}"]
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-postgres} -d ${PGDATABASE:-adaptive_os}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -29,9 +29,9 @@ services:
       PORT: 3000
       PGHOST: db
       PGPORT: 5432
-      PGUSER: ${PG_USER:-postgres}
-      PGPASSWORD: ${PG_PASSWORD:-postgres}
-      PGDATABASE: ${PG_DATABASE:-adaptive_os}
+      PGUSER: ${PGUSER:-postgres}
+      PGPASSWORD: ${PGPASSWORD:-postgres}
+      PGDATABASE: ${PGDATABASE:-adaptive_os}
     ports:
       - "127.0.0.1:${PORT:-38080}:3000"
     depends_on:
@@ -49,9 +49,9 @@ services:
     environment:
       PGHOST: db
       PGPORT: 5432
-      PGUSER: ${PG_USER:-postgres}
-      PGPASSWORD: ${PG_PASSWORD:-postgres}
-      PGDATABASE: ${PG_DATABASE:-adaptive_os}
+      PGUSER: ${PGUSER:-postgres}
+      PGPASSWORD: ${PGPASSWORD:-postgres}
+      PGDATABASE: ${PGDATABASE:-adaptive_os}
     command: ["node", "dist/main.js"]
     depends_on:
       db:
