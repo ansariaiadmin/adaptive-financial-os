@@ -20,4 +20,19 @@ export class LedgerController {
   get(@Param('id') id: string, @Query('tenantId') tenantId: string) {
     return this.ledger.getEntry(tenantId, id);
   }
+
+  @Get('projection')
+  listProjections(@Query('tenantId') tenantId: string, @Query('limit') limit?: string) {
+    return this.ledger.listProjections(tenantId, Number(limit || 20));
+  }
+
+  @Get('projection/:id')
+  getProjection(@Param('id') id: string, @Query('tenantId') tenantId: string) {
+    return this.ledger.getProjection(tenantId, id);
+  }
+
+  @Get('balances')
+  listBalances(@Query('tenantId') tenantId: string) {
+    return this.ledger.listBalances(tenantId);
+  }
 }

@@ -138,6 +138,78 @@ export class LedgerService {
     }
   }
 
+  async listProjections(tenantId: string, limit = 50) {
+    const client = await this.db.getClient();
+    try {
+      await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
+      // Check if projection table exists
+      try {
+        const res = await client.query(
+          `SELECT * FROM ledger_projection WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2`,
+          [tenantId, Math.min(limit, 100)],
+        );
+        return res.rows;
+      } catch (err: any) {
+        if (err.code === '42P01') {
+          // Table does not exist yet — return empty
+          return [];
+        }
+        throw err;
+      }
+    } finally {
+      client.release();
+    }
+  }
+
+  async listBalances(tenantId: string) {
+    const client = await this.db.getClient();
+    try {
+      await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
+      try {
+        const res = await client.query(
+          `SELECT ab.*, a.code AS account_code, a.name AS account_name
+           FROM account_balances ab
+           JOIN accounts a ON a.id = ab.account_id
+           WHERE ab.tenant_id = $1
+           ORDER BY a.code ASC`,
+          [tenantId],
+        );
+        return res.rows;
+      } catch (err: any) {
+        if (err.code === '42P01') {
+          return [];
+        }
+        throw err;
+      }
+    } finally {
+      client.release();
+    }
+  }
+
+  async getProjection(tenantId: string, entryId: string) {
+    const client = await this.db.getClient();
+    try {
+      await client.query("SELECT set_config('app.current_tenant', $1, true)", [tenantId]);
+      try {
+        const res = await client.query(
+          `SELECT * FROM ledger_projection WHERE entry_id = $1 AND tenant_id = $2`,
+          [entryId, tenantId],
+        );
+        if (res.rows.length === 0) {
+          throw new NotFoundException(`Projection for entry ${entryId} not found`);
+        }
+        return res.rows[0];
+      } catch (err: any) {
+        if (err.code === '42P01') {
+          throw new NotFoundException(`Projection table not yet created`);
+        }
+        throw err;
+      }
+    } finally {
+      client.release();
+    }
+  }
+
   private validateBalance(dto: PostEntryDto): void {
     let debits = 0n;
     let credits = 0n;

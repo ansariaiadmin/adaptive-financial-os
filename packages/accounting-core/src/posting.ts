@@ -1,5 +1,5 @@
 import { AccountingError } from "./errors.js";
-import { money, sumMoney } from "./money.js";
+import { sumMoney } from "./money.js";
 import type { JournalEntryInput, JournalLineInput, Money } from "./types.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;

@@ -1,7 +1,8 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
-import { LogOutboxPublisher, OutboxEnvelope, OutboxPublisher } from './outbox.publisher';
+import { WebhookOutboxPublisher, OutboxEnvelope, OutboxPublisher } from './outbox.publisher';
+import { ProjectionService } from './projection.service';
 
 interface ClaimedRow {
   id: string;
@@ -41,7 +42,7 @@ function num(v: unknown, dflt: number): number {
 export class OutboxRelayService implements OnModuleDestroy {
   private readonly logger = new Logger(OutboxRelayService.name);
   private running = false;
-  private readonly publisher: OutboxPublisher = new LogOutboxPublisher();
+  private readonly publisher: OutboxPublisher;
   private readonly backoff: Map<string, Attempt> = new Map();
   private pollCount = 0;
 
@@ -55,6 +56,7 @@ export class OutboxRelayService implements OnModuleDestroy {
   constructor(
     private readonly db: DatabaseService,
     private readonly config: ConfigService,
+    private readonly projection: ProjectionService,
   ) {
     // Defensive parsing: fall back to defaults on NaN / non-positive values.
     this.pollIntervalMs = num(this.config.get('OUTBOX_POLL_INTERVAL_MS'), 2000);
@@ -64,10 +66,21 @@ export class OutboxRelayService implements OnModuleDestroy {
     this.backoffMaxMs = num(this.config.get('OUTBOX_BACKOFF_MAX_MS'), 30000);
     const jr = Number(this.config.get('OUTBOX_JITTER_RATIO'));
     this.jitterRatio = Number.isFinite(jr) && jr >= 0 ? jr : 0.2;
+    // Real webhook publisher — if OUTBOX_WEBHOOK_URL set, does HTTP POST, else log-only
+    this.publisher = new WebhookOutboxPublisher(
+      this.config.get('OUTBOX_WEBHOOK_URL'),
+      num(this.config.get('OUTBOX_WEBHOOK_TIMEOUT_MS'), 5000),
+    );
   }
 
-  start(): void {
+  async start(): Promise<void> {
     this.running = true;
+    try {
+      await this.projection.ensureTables();
+      this.logger.log('projection tables ensured (ledger_projection, account_balances)');
+    } catch (err) {
+      this.logger.warn(`ensureTables failed (will retry on projection): ${this.errMsg(err)}`);
+    }
     this.logger.log(
       `outbox relay started (poll=${this.pollIntervalMs}ms batch=${this.batchSize} ` +
       `maxAttempts=${this.maxAttempts})`,
@@ -105,9 +118,19 @@ export class OutboxRelayService implements OnModuleDestroy {
 
     const okIds: string[] = [];
     let failed = 0;
+    let projected = 0;
     for (const row of rows) {
       try {
-        await this.publisher.publish(this.toEnvelope(row));
+        const envelope = this.toEnvelope(row);
+        await this.publisher.publish(envelope);
+        // Real projection to ledger — P02 close
+        try {
+          const didProject = await this.projection.project(envelope);
+          if (didProject) projected++;
+        } catch (projErr) {
+          // Projection failure should be treated as publish failure for retry
+          throw new Error(`projection failed for ${row.id}: ${this.errMsg(projErr)}`);
+        }
         okIds.push(row.id);
       } catch (err) {
         failed++;
@@ -119,7 +142,7 @@ export class OutboxRelayService implements OnModuleDestroy {
       await this.markPublished(okIds);
     }
     this.logger.log(
-      `poll: claimed=${rows.length} dispatched=${okIds.length} failed=${failed}`,
+      `poll: claimed=${rows.length} dispatched=${okIds.length} projected=${projected} failed=${failed}`,
     );
     if (this.backoff.size > MAP_PRUNE_THRESHOLD) this.pruneResolved();
   }
